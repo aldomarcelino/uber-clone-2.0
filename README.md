@@ -1,6 +1,7 @@
 # uber-clone-2.0
-> REACT NATIVE
-> Navigation
-> Redux 
-> Tailwind CSS 
-> Google Autocomplete)
+### We Use
+- REACT NATIVE
+- Navigation
+- Redux 
+- Tailwind CSS 
+- Google Autocomplete)
