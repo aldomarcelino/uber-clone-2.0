@@ -1,17 +1,35 @@
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import NavOptions from "../components/NavOptions";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { GOOGLE_MAPS_APIKEY } from "@env";
 import { useDispatch } from "react-redux";
 import { setDestination, setOrigin } from "../slices/navSlice";
 import * as Location from "expo-location";
-import Geocoder from "react-native-geocoding";
+import { useNavigation } from "@react-navigation/native";
+import NavOptions from "../components/NavOptions";
+import tw from "twrnc";
 
 const HomeScreen = () => {
-  Geocoder.init("AIzaSyAw99RzBxkw-upCWfK5gVURlEMRzTn3pOI", { language: "id" }); // use a valid API key
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [location, setLocation] = useState("Waiting...");
+  const [location2, setLocation2] = useState("Waiting...");
+  useEffect(() => {
+    const _getLocationAsync = async () => {
+      await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 5000,
+          distanceInterval: 1,
+        },
+        (loc) => {
+          console.log(loc, "???????");
+        }
+      );
+    };
+    let interval = setInterval(() => {
+      _getLocationAsync();
+    }, 5000);
+    return () => clearInterval(interval);
+  });
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -19,42 +37,35 @@ const HomeScreen = () => {
         setErrorMsg("Permission to access location was denied");
         return;
       }
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+      let { coords } = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = coords;
+      let response = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+      for (let item of response) {
+        let address = `${item.name}, ${item.street}, ${item.postalCode}, ${item.city}`;
+        setLocation(address);
+      }
     })();
   }, []);
-  var addressComponent;
-  let long = "Waiting..";
-  let lat = "Waiting..";
-  if (errorMsg) {
-    long = errorMsg;
-  } else if (location) {
-    Geocoder.from(location?.coords.latitude, location?.coords.longitude)
-      .then((json) => {
-        addressComponent = json.results[0];
-        console.log(addressComponent, "XXXX");
-      })
-      .catch((error) => console.warn(error));
-    // console.log(location);
-    // long = JSON.stringify(location?.coords.latitude);
-    // lat = JSON.stringify(location?.coords.longitude);
-  }
-  // console.log(long, "<<<<<<<<");
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   return (
     <SafeAreaView>
       <View style={styles.container}>
-        <Text style={styles.paragraph}>{long}</Text>
-        <Text style={styles.paragraph}>{addressComponent}</Text>
+        <Text style={styles.paragraph}>{location}</Text>
       </View>
       <View>
-        <Text>i'am a HomeScreen</Text>
+        <Text style={tw`text-center py-5 text-xl`}>Set up Your Address</Text>
       </View>
       <GooglePlacesAutocomplete
-        placeholder="Where From?"
-        styles={{ container: { flex: 0 }, textInput: { fontSize: 18 } }}
+        placeholder="Enter destination address?"
+        styles={{
+          container: { flex: 0, marginHorizontal: 10 },
+          textInput: { fontSize: 18, borderRadius: 30 },
+        }}
         onPress={(data, details = null) => {
-          console.log(data, details);
           dispatch(
             setOrigin({
               location: details.geometry.location,
@@ -62,6 +73,7 @@ const HomeScreen = () => {
             })
           );
           dispatch(setDestination(null));
+          navigation.navigate("AddressScreen");
         }}
         fetchDetails={true}
         returnKeyType={"search"}
@@ -69,12 +81,11 @@ const HomeScreen = () => {
         minLength={2}
         query={{
           key: GOOGLE_MAPS_APIKEY,
-          language: "en",
+          language: "id",
         }}
         nearbyPlacesAPI="GooglePlacesSearch"
         debounce={400}
       />
-
       <NavOptions />
     </SafeAreaView>
   );
@@ -82,17 +93,4 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-const styles = StyleSheet.create({
-  // container: {
-  //   flex: 1,
-  //   alignItems: "center",
-  //   justifyContent: "center",
-  //   paddingTop: Constants.statusBarHeight,
-  //   backgroundColor: "#ecf0f1",
-  // },
-  // paragraph: {
-  //   margin: 24,
-  //   fontSize: 18,
-  //   textAlign: "center",
-  // },
-});
+const styles = StyleSheet.create({});

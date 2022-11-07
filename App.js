@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
+import AddressScreen from "./screen/AddressScreen";
 import HomeScreen from "./screen/HomeScreen";
 import MapScreen from "./screen/MapScreen";
 import { store } from "./store";
@@ -23,6 +24,11 @@ export default function App() {
             <Stack.Screen
               name="MapScreen"
               component={MapScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AddressScreen"
+              component={AddressScreen}
               options={{ headerShown: false }}
             />
           </Stack.Navigator>
